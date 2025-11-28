@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage';
 import ProblemsPage from './pages/ProblemsPage';
 import BillboardPage from './pages/BillboardPage';
 import DashboardPage from './pages/DashboardPage';
+import SubmitProblemPage from './pages/SubmitProblemPage'; // ← ADD THIS
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/problems" element={<ProblemsPage />} />
           <Route path="/billboard" element={<BillboardPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/submit-problem" element={<SubmitProblemPage />} /> {/* ← ADD THIS */}
         </Routes>
       </div>
     </BrowserRouter>
