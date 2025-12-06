@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+
 function ProblemForm() {
   const navigate = useNavigate();
   
@@ -12,6 +13,8 @@ function ProblemForm() {
   const [expectedOutcome, setExpectedOutcome] = useState('');
   const [urgency, setUrgency] = useState('medium');
   const [hasTriedSolutions, setHasTriedSolutions] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [submittedProblemId, setSubmittedProblemId] = useState('');
   
   // OPTIONAL FIELDS STATE
   const [tags, setTags] = useState([]);
@@ -117,6 +120,12 @@ function ProblemForm() {
     
     if (!trimmedTag) return;
     
+    // Character limit check
+    if (trimmedTag.length > 20) {
+      alert('Tags must be 20 characters or less');
+      return;
+    }
+    
     if (tags.length >= 5) {
       alert('Maximum 5 tags allowed');
       return;
@@ -177,7 +186,8 @@ function ProblemForm() {
     // Simulate network delay
     setTimeout(() => {
       setIsSubmitting(false);
-      navigate('/problems');
+      setSubmittedProblemId(problem.id);
+      setShowSuccessModal(true);
     }, 800);
   };
   
@@ -360,13 +370,19 @@ function ProblemForm() {
             {/* URGENCY LEVEL */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Urgency Level *
+                Urgency Level * 
+                <span className="text-gray-500 font-normal ml-2">(Be honest - this affects priority)</span>
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 
                 <button
                   type="button"
-                  onClick={() => setUrgency('critical')}
+                  onClick={() => {
+                    if (window.confirm('Critical means your store is DOWN or losing money RIGHT NOW. Are you sure?')) {
+                      setUrgency('critical');
+                    }
+                  }}
                   className={`p-4 rounded-lg border-2 font-medium transition-all text-left ${
                     urgency === 'critical'
                       ? 'border-red-500 bg-red-50 text-red-700'
@@ -374,7 +390,8 @@ function ProblemForm() {
                   }`}
                 >
                   <div className="font-bold mb-1">🔴 Critical</div>
-                  <div className="text-xs opacity-75">Need solution within 3 days</div>
+                  <div className="text-xs opacity-75">Store down or major revenue loss</div>
+                  <div className="text-xs opacity-75 mt-1">Need solution within 3 days</div>
                 </button>
                 
                 <button
@@ -387,7 +404,8 @@ function ProblemForm() {
                   }`}
                 >
                   <div className="font-bold mb-1">🟠 High</div>
-                  <div className="text-xs opacity-75">Within 1 week</div>
+                  <div className="text-xs opacity-75">Blocking important tasks</div>
+                  <div className="text-xs opacity-75 mt-1">Within 1 week</div>
                 </button>
                 
                 <button
@@ -400,7 +418,8 @@ function ProblemForm() {
                   }`}
                 >
                   <div className="font-bold mb-1">🟡 Medium</div>
-                  <div className="text-xs opacity-75">Within 2 weeks</div>
+                  <div className="text-xs opacity-75">Important but not urgent</div>
+                  <div className="text-xs opacity-75 mt-1">Within 2 weeks</div>
                 </button>
                 
                 <button
@@ -413,10 +432,18 @@ function ProblemForm() {
                   }`}
                 >
                   <div className="font-bold mb-1">🟢 Low</div>
-                  <div className="text-xs opacity-75">Whenever possible</div>
+                  <div className="text-xs opacity-75">Nice to have improvements</div>
+                  <div className="text-xs opacity-75 mt-1">Whenever possible</div>
                 </button>
                 
               </div>
+              
+              {/* Warning for Critical */}
+              {urgency === 'critical' && (
+                <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                  ⚠️ <strong>Critical problems</strong> should only be used when your store is experiencing downtime or major revenue loss. False critical flags may delay real emergencies.
+                </div>
+              )}
             </div>
           </div>
           
@@ -464,32 +491,38 @@ function ProblemForm() {
               
               {/* Tag input */}
               {showTagInput && (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={currentTag}
-                    onChange={(e) => setCurrentTag(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                    placeholder="Type tag and press Enter..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddTag}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTagInput(false);
-                      setCurrentTag('');
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={currentTag}
+                      onChange={(e) => setCurrentTag(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                      placeholder="Type tag and press Enter..."
+                      maxLength={20}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddTag}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowTagInput(false);
+                        setCurrentTag('');
+                      }}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {currentTag.length}/20 characters
+                  </div>
                 </div>
               )}
               
@@ -614,11 +647,98 @@ function ProblemForm() {
             >
               Cancel
             </button>
+            
           </div>
           
         </form>
-        
+      
+        {/* SUCCESS MODAL */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform animate-scale-in">
+              
+              {/* Success Icon */}
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              
+              {/* Title */}
+              <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
+                Problem Submitted Successfully! 🎉
+              </h2>
+              
+              {/* Problem ID */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600 mb-1">Your Problem ID:</p>
+                <p className="text-lg font-mono font-bold text-blue-600">{submittedProblemId}</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Save this ID to track your problem
+                </p>
+              </div>
+              
+              {/* Info */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 text-sm text-gray-700">
+                <p className="mb-2">✅ Your problem has been posted to the community</p>
+                <p className="mb-2">📧 You'll be notified when solutions are donated</p>
+                <p>⏰ We guarantee attention within 21 days</p>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    navigate(`/problems`);
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors"
+                >
+                  View in Problem Bank
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    // Reset form
+                    setTitle('');
+                    setCategory('');
+                    setDescription('');
+                    setWhatTried('');
+                    setExpectedOutcome('');
+                    setUrgency('medium');
+                    setTags([]);
+                    setBudget('');
+                    setChecklist({
+                      searched: false,
+                      detailProvided: false,
+                      realProblem: false,
+                      agreeToRate: false
+                    });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="w-full bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-300 py-3 rounded-lg font-semibold transition-colors"
+                >
+                  Submit Another Problem
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    navigate('/dashboard');
+                  }}
+                  className="w-full text-gray-600 hover:text-gray-900 py-2 font-medium transition-colors"
+                >
+                  Go to Dashboard
+                </button>
+              </div>
+              
+            </div>
+          </div>
+        )}
+     
       </div>
+      
     </div>
   );
 }
